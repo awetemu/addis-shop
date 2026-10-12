@@ -1,111 +1,263 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+import { useEffect, useState } from 'react'
+import './App.css'
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+const API_URL =
+  'https://addis-shop-backend.addis-shop-2026.workers.dev'
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+function App() {
+  const [clothes, setClothes] = useState([])
+  const [selectedItem, setSelectedItem] = useState(null)
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  useEffect(() => {
+    fetch(`${API_URL}/clothes`)
+      .then((response) => response.json())
+      .then((data) => setClothes(data))
+      .catch((error) => console.error(error))
+  }, [])
+
+  return (
+    <div className="shop">
+
+      {/* Header */}
+      <header className="site-header">
+        <div className="logo">FERUZA</div>
+
+        <nav>
+          <a href="#collection">Collection</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </header>
+
+
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-content">
+
+          <p className="eyebrow">
+            NEW COLLECTION
+          </p>
+
+          <h1>
+            Elegance in
+            <br />
+            Every Detail
+          </h1>
+
+          <p className="hero-text">
+            Discover our carefully selected clothing
+            collection.
+          </p>
+
+          <a
+            className="shop-button"
+            href="#collection"
+          >
+            Shop Collection
+          </a>
+
+        </div>
+      </section>
+
+
+      {/* Collection */}
+      <section
+        id="collection"
+        className="collection"
+      >
+
+        <div className="section-heading">
+
+          <p className="eyebrow">
+            FERUZA
+          </p>
+
+          <h2>
+            Our Collection
+          </h2>
+
+          <p>
+            Simple pieces. Beautiful style.
+          </p>
+
+        </div>
+
+
+        <div className="products">
+
+          {clothes.map((item) => (
+
+            <article
+              className="product-card"
+              key={item.id}
+              onClick={() => setSelectedItem(item)}
+            >
+
+              <div className="product-image">
+
+                {item.image_data ? (
+                  <img
+                    src={item.image_data}
+                    alt={`FERUZA clothing ${item.id}`}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="empty-card">
+                    Coming Soon
+                  </div>
+                )}
+
+              </div>
+
+
+              <div className="product-info">
+
+                <span>
+                  FERUZA COLLECTION
+                </span>
+
+                {item.price && (
+                  <strong>
+                    {item.price} ETB
+                  </strong>
+                )}
+
+              </div>
+
+            </article>
+
+          ))}
+
+        </div>
+
+      </section>
+
+
+      {/* Product Details */}
+      {selectedItem && (
+
+        <div
+          className="modal"
+          onClick={() => setSelectedItem(null)}
+        >
+
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <button
+              className="close-button"
+              onClick={() => setSelectedItem(null)}
+            >
+              ×
+            </button>
+
+
+            {selectedItem.image_data && (
+              <img
+                src={selectedItem.image_data}
+                alt="FERUZA clothing"
+              />
+            )}
+
+
+            <div className="modal-info">
+
+              <p className="eyebrow">
+                FERUZA COLLECTION
+              </p>
+
+
+              {selectedItem.price && (
+                <h2>
+                  {selectedItem.price} ETB
+                </h2>
+              )}
+
+
+              <a
+                className="whatsapp-button"
+                href="https://wa.me/251934496830"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Order on WhatsApp
+              </a>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+      {/* Contact */}
+      <section
+        id="contact"
+        className="contact-section"
+      >
+
+        <p className="eyebrow">
+          GET IN TOUCH
+        </p>
+
+        <h2>
+          We would love to hear from you.
+        </h2>
+
+
+        <div className="contact-links">
+
+          <a href="tel:+251934496830">
+            Call
+          </a>
+
+          <a
+            href="https://wa.me/251934496830"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
+          </a>
+
+          <a
+            href="https://t.me/Emufh"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Telegram
+          </a>
+
+          <a
+            href="https://instagram.com/awet5136"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Instagram
+          </a>
+
+        </div>
+
+      </section>
+
+
+      {/* Footer */}
+      <footer>
+
+        <div className="footer-logo">
+          FERUZA
+        </div>
+
+        <p>
+          © 2026 FERUZA. All rights reserved.
+        </p>
+
+      </footer>
+
+    </div>
+  )
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+export default App
