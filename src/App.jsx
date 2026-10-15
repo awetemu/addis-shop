@@ -4,14 +4,23 @@ import './App.css'
 const API_URL =
   'https://addis-shop-backend.addis-shop-2026.workers.dev'
 
-function ProductImage({ id }) {
+const PAGE_VERSION = Date.now()
+
+function ProductImage({ id, onClick, priority }) {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  const imageUrl = `${API_URL}/clothes-image?id=${id}`
+  const imageUrl =
+    `${API_URL}/clothes-image?id=${id}&v=${PAGE_VERSION}`
 
   return (
-    <div className="product-image">
+    <button
+      type="button"
+      className="product-image"
+      onClick={onClick}
+      aria-label="View clothing picture larger"
+      disabled={failed}
+    >
       {!loaded && !failed && <div className="skeleton" />}
 
       {failed ? (
@@ -20,24 +29,21 @@ function ProductImage({ id }) {
         <img
           src={imageUrl}
           alt="Clothing"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
-          onLoad={() => {
-            console.log('PHOTO LOADED:', id, imageUrl)
-            setLoaded(true)
-          }}
-          onError={() => {
-            console.error('PHOTO FAILED:', id, imageUrl)
-            setFailed(true)
-          }}
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
           style={{
             display: 'block',
             width: '100%',
             height: '100%',
             objectFit: 'contain',
+            opacity: loaded ? 1 : 0,
           }}
         />
       )}
-    </div>
+    </button>
   )
 }
 
@@ -45,28 +51,73 @@ function App() {
   const [clothes, setClothes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
-    fetch(`${API_URL}/clothes-list`)
-      .then((response) => {
+    let cancelled = false
+
+    async function loadClothes() {
+      try {
+        const response = await fetch(
+          `${API_URL}/clothes-list`,
+          { cache: 'no-store' }
+        )
+
         if (!response.ok) {
           throw new Error(`Request failed: ${response.status}`)
         }
-        return response.json()
-      })
-      .then((data) => {
-        console.log('CLOTHING DATA:', data)
-        console.log('FIRST ITEM:', data[0])
-        setClothes(data)
-      })
-      .catch((err) => {
+
+        const data = await response.json()
+
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid product list')
+        }
+
+        if (!cancelled) {
+          setClothes(data)
+          setError(false)
+        }
+      } catch (err) {
         console.error('CLOTHING LIST ERROR:', err)
-        setError(true)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+
+        if (!cancelled) {
+          setError(true)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadClothes()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  useEffect(() => {
+    if (selectedImage === null) return
+
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') {
+        setSelectedImage(null)
+      }
+    }
+
+    document.addEventListener('keydown', closeOnEscape)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape)
+      document.body.style.overflow = ''
+    }
+  }, [selectedImage])
+
+  const selectedItem = clothes.find(
+    (item) => item.id === selectedImage
+  )
 
   return (
     <div className="shop">
@@ -81,20 +132,31 @@ function App() {
         <p>Could not load the collection. Please try again.</p>
       )}
 
+      {!loading && !error && clothes.length === 0 && (
+        <p>No clothing available yet.</p>
+      )}
+
       <div className="products">
-        {clothes.map((item) => (
+        {clothes.map((item, index) => (
           <div className="card" key={item.id}>
-            <ProductImage id={item.id} />
-            {item.price && <p>{item.price} ETB</p>}
+            <ProductImage
+              id={item.id}
+              priority={index < 4}
+              onClick={() => setSelectedImage(item.id)}
+            />
+
+            {item.price != null && item.price !== '' && (
+              <p>{item.price} ETB</p>
+            )}
           </div>
         ))}
       </div>
 
       <div className="contact">
-        <a href="tel:+251934496830">📞 Call</a>
+        <a href="tel:+251996669549">📞 Call</a>
 
         <a
-          href="https://wa.me/251934496830"
+          href="https://wa.me/251996669549"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -102,7 +164,7 @@ function App() {
         </a>
 
         <a
-          href="https://t.me/Emufh"
+          href="https://t.me/+251996669549"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -110,21 +172,42 @@ function App() {
         </a>
 
         <a
-          href="https://instagram.com/awet5136"
+          href="https://instagram.com/nuruferuza"
           target="_blank"
           rel="noopener noreferrer"
         >
           📷 Instagram
         </a>
-
-        <a
-          href="https://wa.me/251934496830?text=Hello%20FERUZA%20FASHION%2C%20I%20would%20like%20to%20ask%20about%20your%20clothes."
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          💌 Message Me
-        </a>
       </div>
+
+      {selectedImage !== null && (
+        <div
+          className="image-viewer"
+          onClick={() => setSelectedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged clothing picture"
+        >
+          <button
+            type="button"
+            className="image-viewer-close"
+            onClick={() => setSelectedImage(null)}
+            aria-label="Close picture"
+          >
+            ×
+          </button>
+
+          <img
+            src={`${API_URL}/clothes-image?id=${selectedImage}&v=${PAGE_VERSION}`}
+            alt={
+              selectedItem
+                ? `Clothing ${selectedItem.id}`
+                : 'Enlarged clothing'
+            }
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
 
       <footer>
         <p>© 2026 FERUZA FASHION</p>
